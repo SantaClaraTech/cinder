@@ -239,6 +239,11 @@ class CephBackupDriver(driver.BackupDriver):
         """Determine if journaling is supported by our version of librbd."""
         return hasattr(self.rbd, 'RBD_FEATURE_JOURNALING')
 
+    @property
+    def _supports_fast_diff(self):
+        """Determine if journaling is supported by our version of librbd."""
+        return hasattr(self.rbd, 'RBD_FEATURE_FAST_DIFF')
+
     def _get_rbd_support(self):
         """Determine RBD features supported by our version of librbd."""
         old_format = True
@@ -268,6 +273,14 @@ class CephBackupDriver(driver.BackupDriver):
                     _("Image Journaling set but RBD backend does "
                       "not support journaling")
                 )
+
+        if self._supports_fast_diff:
+            LOG.debug("RBD also supports fast-diff, enabling it "
+                      "together with exclusive-lock and object-map")
+            old_format = False
+            features |= (self.rbd.RBD_FEATURE_EXCLUSIVE_LOCK |
+                         self.rbd.RBD_FEATURE_OBJECT_MAP |
+                         self.rbd.RBD_FEATURE_FAST_DIFF)
 
         return (old_format, features)
 
